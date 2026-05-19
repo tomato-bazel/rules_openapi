@@ -8,7 +8,10 @@ exports_files(["defs.bzl"])
 bzl_library(
     name = "defs_bzl",
     srcs = ["defs.bzl"],
-    deps = ["//openapi:toolchains_bzl"],
+    deps = [
+        "//openapi:toolchains_bzl",
+        "@rules_rust//rust:bzl_lib",
+    ],
 )
 
 # Default Rust client codegen toolchain: progenitor-backed.

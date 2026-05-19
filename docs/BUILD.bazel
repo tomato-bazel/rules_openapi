@@ -1,0 +1,79 @@
+load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
+load("@rules_jsonschema//util:write_source_files.bzl", "write_source_files")
+load("@stardoc//stardoc:stardoc.bzl", "stardoc")
+
+package(default_visibility = ["//visibility:public"])
+
+# Reference docs are stardoc-generated *and* committed to source. The
+# diff_test gates assert the committed file matches what stardoc
+# produces from the .bzl docstrings; CI fails if someone changes a
+# rule without running `bazel run //docs:update`.
+#
+# One stardoc invocation per public-API .bzl:
+#   - //rust:defs.bzl       — openapi_rust_client user-facing macro.
+#   - //openapi:providers.bzl    — OpenapiCodegenToolchainInfo.
+#   - //openapi:toolchains.bzl   — openapi_codegen_toolchain rule.
+#   - //openapi:contract_test.bzl — openapi_plugin_contract_test.
+
+stardoc(
+    name = "rust_defs_doc",
+    out = "defs.md.generated",
+    input = "//rust:defs.bzl",
+    deps = ["//rust:defs_bzl"],
+)
+
+stardoc(
+    name = "providers_doc",
+    out = "providers.md.generated",
+    input = "//openapi:providers.bzl",
+    deps = ["//openapi:providers_bzl"],
+)
+
+stardoc(
+    name = "toolchains_doc",
+    out = "toolchains.md.generated",
+    input = "//openapi:toolchains.bzl",
+    deps = ["//openapi:toolchains_bzl"],
+)
+
+stardoc(
+    name = "contract_test_doc",
+    out = "contract_test.md.generated",
+    input = "//openapi:contract_test.bzl",
+    deps = ["//openapi:contract_test_bzl"],
+)
+
+diff_test(
+    name = "rust_defs_doc_up_to_date",
+    file1 = "defs.md",
+    file2 = ":rust_defs_doc",
+)
+
+diff_test(
+    name = "providers_doc_up_to_date",
+    file1 = "providers.md",
+    file2 = ":providers_doc",
+)
+
+diff_test(
+    name = "toolchains_doc_up_to_date",
+    file1 = "toolchains.md",
+    file2 = ":toolchains_doc",
+)
+
+diff_test(
+    name = "contract_test_doc_up_to_date",
+    file1 = "contract_test.md",
+    file2 = ":contract_test_doc",
+)
+
+# `bazel run //docs:update` writes all stardoc outputs back to source.
+write_source_files(
+    name = "update",
+    files = {
+        "defs.md": ":rust_defs_doc",
+        "providers.md": ":providers_doc",
+        "toolchains.md": ":toolchains_doc",
+        "contract_test.md": ":contract_test_doc",
+    },
+)
