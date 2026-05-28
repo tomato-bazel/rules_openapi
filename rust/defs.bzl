@@ -69,6 +69,9 @@ def openapi_rust_client(
         serde = None,
         serde_json = None,
         regress = None,
+        chrono = None,
+        uuid = None,
+        bytes = None,
         visibility = None,
         **rust_library_kwargs):
     """Generate a rust_library of a typed OpenAPI HTTP client.
@@ -92,6 +95,10 @@ def openapi_rust_client(
       serde_json: label of `serde_json`.
       regress: label of `regress` (used by typify-generated types
         nested inside progenitor's output).
+      chrono: label of `chrono` (date-time formats). Must come from
+        the same crates_universe as `serde`.
+      uuid: label of `uuid` (uuid format). Same-universe-as-serde rule.
+      bytes: label of `bytes` (binary format). Same-universe-as-serde rule.
       visibility: forwarded to rust_library.
       **rust_library_kwargs: forwarded to rust_library (e.g. extra `deps`).
     """
@@ -109,10 +116,14 @@ def openapi_rust_client(
         regress or Label("@openapi_crates//:regress"),
         # progenitor unconditionally references chrono / uuid / bytes
         # in trait impls at module scope, even when the specific
-        # spec doesn't use the corresponding formats.
-        Label("@openapi_crates//:chrono"),
-        Label("@openapi_crates//:uuid"),
-        Label("@openapi_crates//:bytes"),
+        # spec doesn't use the corresponding formats. These are
+        # threadable too: a consumer with its own crates_universe MUST
+        # supply them from the SAME universe as `serde`, or chrono's
+        # serde impls resolve against the wrong serde (trait-identity
+        # mismatch).
+        chrono or Label("@openapi_crates//:chrono"),
+        uuid or Label("@openapi_crates//:uuid"),
+        bytes or Label("@openapi_crates//:bytes"),
     ]
     extra_deps = rust_library_kwargs.pop("deps", [])
     rust_library(

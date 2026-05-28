@@ -4,6 +4,16 @@ All notable changes to rules_openapi. The format is loosely
 [Keep a Changelog](https://keepachangelog.com/) — version headers
 mirror the published bazel-registry entries.
 
+## 0.2.1 — threadable chrono / uuid / bytes
+
+- `openapi_rust_client` gains `chrono`, `uuid`, `bytes` attrs (default
+  to `@openapi_crates`, so existing callers are unchanged). Previously
+  these three were hard-coded to `@openapi_crates` while the rest of
+  the runtime deps were threadable — a consumer with its own
+  crates_universe got a trait-identity mismatch (chrono's serde impls
+  resolved against `@openapi_crates`' serde, not the consumer's).
+  Threading all runtime deps from one universe fixes it.
+
 ## 0.2.0 — docs + CI infrastructure
 
 - Stardoc-generated reference docs for the 4 public-API .bzl files

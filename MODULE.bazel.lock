@@ -338,8 +338,8 @@
     "https://raw.githubusercontent.com/fastverk/bazel-registry/main/modules/rules_java/8.5.1/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/fastverk/bazel-registry/main/modules/rules_java/8.6.1/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/fastverk/bazel-registry/main/modules/rules_java/9.1.0/MODULE.bazel": "not found",
-    "https://raw.githubusercontent.com/fastverk/bazel-registry/main/modules/rules_jsonschema/0.1.0/MODULE.bazel": "66c5aa66f73e037c8abba18f64774aca1132e7ecbd88fbe468c9bbc511d75034",
-    "https://raw.githubusercontent.com/fastverk/bazel-registry/main/modules/rules_jsonschema/0.1.0/source.json": "6bb2e5312413fca81be9574bf6cf80df7b449385b5f38b4683ef1f038029e806",
+    "https://raw.githubusercontent.com/fastverk/bazel-registry/main/modules/rules_jsonschema/0.1.0/MODULE.bazel": "c46061a48a749bb82ac033696b8f0bfdd02672641daad15fa4e12b30eeee9a1a",
+    "https://raw.githubusercontent.com/fastverk/bazel-registry/main/modules/rules_jsonschema/0.1.0/source.json": "4f2455b722559c52fd9212fe78f2ed0b5f3fc2a729dc62bd1ead94b1d7ff59e7",
     "https://raw.githubusercontent.com/fastverk/bazel-registry/main/modules/rules_jvm_external/4.4.2/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/fastverk/bazel-registry/main/modules/rules_jvm_external/5.1/MODULE.bazel": "not found",
     "https://raw.githubusercontent.com/fastverk/bazel-registry/main/modules/rules_jvm_external/5.2/MODULE.bazel": "not found",
@@ -393,7 +393,7 @@
     "//openapi/private:extensions.bzl%openapi_examples_extension": {
       "general": {
         "bzlTransitiveDigest": "QvtJ6YhB5Ios/7w4FQ3QVoFXEVdNlogmFYjG+mbuQ9s=",
-        "usagesDigest": "g63J3mEClJN6gv3jfKAX/lzJ3eVy09kFk+h5UDOF+EY=",
+        "usagesDigest": "QJ9egZ9jOEtWg/BeVTjEk0ksZDOXiiC1rW3D18CLMmg=",
         "recordedInputs": [
           "REPO_MAPPING:,bazel_tools bazel_tools"
         ],
@@ -669,7 +669,7 @@
     "@@rules_rust+//crate_universe:extension.bzl%crate": {
       "general": {
         "bzlTransitiveDigest": "zE8yHvXMtDUiPQ+Cyq39u73tk8hC5YAlSh9RfjXXPjs=",
-        "usagesDigest": "QJEFp5N2ZJQR8rY9I7WgwQoRgPIEfHZWycck6QBmTf0=",
+        "usagesDigest": "BExg9H26pDK2g3afSxDgTB6Aq+bmo5mPDfvM488OnWs=",
         "recordedInputs": [
           "ENV:CARGO_BAZEL_DEBUG \\0",
           "ENV:CARGO_BAZEL_GENERATOR_SHA256 \\0",
