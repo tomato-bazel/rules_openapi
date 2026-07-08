@@ -1,0 +1,27 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@rules_openapi//openapi:toolchains.bzl", "openapi_codegen_toolchain")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["defs.bzl"])
+
+bzl_library(
+    name = "defs_bzl",
+    srcs = ["defs.bzl"],
+    deps = [
+        "//openapi:toolchains_bzl",
+        "@rules_go//go:def",
+    ],
+)
+
+# Default Go client codegen toolchain: oapi-codegen-backed.
+openapi_codegen_toolchain(
+    name = "default_go_client_codegen",
+    binary = "//tools/openapi_to_go_client:openapi_to_go_client",
+)
+
+toolchain(
+    name = "default_go_client_codegen_toolchain",
+    toolchain = ":default_go_client_codegen",
+    toolchain_type = "//openapi:go_client_codegen_toolchain_type",
+)

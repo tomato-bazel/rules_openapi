@@ -13,8 +13,9 @@ exports_files([
 # or their own implementations to override.
 toolchain_type(name = "rust_client_codegen_toolchain_type")
 
+toolchain_type(name = "go_client_codegen_toolchain_type")
+
 # Reserved but not yet wired:
-#   toolchain_type(name = "go_client_codegen_toolchain_type")
 #   toolchain_type(name = "rust_server_codegen_toolchain_type")
 #   toolchain_type(name = "go_server_codegen_toolchain_type")
 

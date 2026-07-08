@@ -6,13 +6,14 @@ plugin contract. The spec is the single source of truth: regenerated
 on every build, plugins live in their target language, swappable via
 Bazel toolchains.
 
-## Status: v0.1 — Rust client only
+## Status: Rust + Go clients
 
-Initial release ships **one path**: OpenAPI → typed Rust HTTP client
-via [`progenitor`](https://crates.io/crates/progenitor). Designed to
-validate the plugin contract works for OpenAPI consumers; Go clients,
-server stubs, and richer composition with rules_jsonschema for
-`components/schemas` are the obvious next steps.
+Ships **two paths** today: OpenAPI → typed Rust HTTP client via
+[`progenitor`](https://crates.io/crates/progenitor), and OpenAPI → typed Go HTTP
+client via [`oapi-codegen`](https://github.com/oapi-codegen/oapi-codegen). Both
+sit behind the same language-neutral plugin contract, swappable via Bazel
+toolchains. Server stubs and richer composition with rules_jsonschema for
+`components/schemas` are the next steps.
 
 ## Architecture
 
@@ -30,7 +31,12 @@ Same shape as rules_jsonschema:
   - openapi_rust_client rule
   - default toolchain → //tools/openapi_to_rust_client (progenitor-backed)
 
+//go:                           Go output
+  - openapi_go_client rule
+  - default toolchain → //tools/openapi_to_go_client (oapi-codegen-backed)
+
 //tools/openapi_to_rust_client  default Rust client plugin
+//tools/openapi_to_go_client    default Go client plugin
 //tools/contract_test           contract conformance driver
 //openapi/private/extensions.bzl  http_file pin for the smoke fixture
 ```
@@ -107,6 +113,64 @@ openapi_rust_client(
 )
 ```
 
+## `openapi_go_client`
+
+```python
+load("@rules_openapi//go:defs.bzl", "openapi_go_client")
+
+openapi_go_client(
+    name = "petstore_client",
+    spec = "//path/to:petstore.yaml",  # or @hosted//file:foo.yaml
+    package = "petstore",
+)
+```
+
+Produces a `go_library` exporting a `Client` + `ClientWithResponses` with one
+method per OpenAPI operation, plus Go types for `components/schemas`. Consumers
+add it to `deps` (or `embed`) and call methods directly:
+
+```go
+client, _ := petstore.NewClient("https://api.example.com")
+resp, _ := client.GetPet(ctx, 42)
+```
+
+### Threading the runtime
+
+The generated client references `github.com/oapi-codegen/runtime` (parameter
+binding) and `.../runtime/types` (Date/UUID/File formats). Defaults point at
+rules_openapi's own go_deps; consumers building against their own `go_deps`
+universe thread their labels through:
+
+```python
+openapi_go_client(
+    name = "my_client",
+    spec = "spec.yaml",
+    package = "myclient",
+    runtime       = "@my_go_deps//github.com/oapi-codegen/runtime",
+    runtime_types = "@my_go_deps//github.com/oapi-codegen/runtime/types:types",
+)
+```
+
+### OpenAPI 3.1 normalization
+
+The default Go plugin runs a spec-normalization pass before oapi-codegen for
+constructs it doesn't handle natively — so real-world 3.1 specs generate cleanly
+rather than erroring:
+
+- `type: [X, "null"]` (3.1 nullable arrays) → `type: X` + `nullable: true`.
+- `oneOf` with a bare `{type: "null"}` branch → drop the branch, mark nullable.
+- a `oneOf` + `discriminator` with **inline** branches (no `$ref`, no `mapping`) →
+  each branch is lifted to a named `components/schemas` entry keyed by its
+  discriminator value, and the `mapping` is filled in, so oapi-codegen emits a
+  proper discriminated union with named branch types.
+- Go field-name collisions from dual camelCase/snake_case properties (e.g. a
+  deprecated `createdAt` alongside `created_at`) → an `x-go-name` override on the
+  non-canonical property, keeping both.
+
+The plugin also prunes oapi-codegen's broad import block itself (via `go/ast`)
+rather than shelling out to `goimports`, so it runs in a hermetic sandbox with no
+`go` on `PATH`.
+
 ## progenitor's limitations
 
 The default plugin wraps progenitor 0.14, which doesn't handle some
@@ -167,11 +231,13 @@ The default plugin is gated by this test
 
 - **Bazel**: 7.4+, bzlmod required (tested on 9.1).
 - **Rust**: 1.88+ (transitive deps need stabilised `let-chains`).
-- **OpenAPI**: 3.0+. Progenitor's coverage gaps documented above.
+- **Go**: SDK 1.24+ (downloaded by rules_go).
+- **OpenAPI**: 3.0 + 3.1. The Rust path follows progenitor's coverage (gaps
+  documented above); the Go path normalizes the common 3.1 constructs
+  oapi-codegen doesn't handle (see `openapi_go_client` above).
 
 ## Roadmap
 
-- **v0.2**: `openapi_go_client` via [`oapi-codegen`](https://github.com/oapi-codegen/oapi-codegen).
 - **v0.3**: Server stubs (`openapi_rust_server`, `openapi_go_server`).
 - **v0.4**: Compose with rules_jsonschema — extract `components/schemas`
   in a preprocessing step, pipe through `jsonschema_rust_library`,

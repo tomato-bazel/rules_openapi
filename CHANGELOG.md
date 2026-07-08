@@ -4,6 +4,26 @@ All notable changes to rules_openapi. The format is loosely
 [Keep a Changelog](https://keepachangelog.com/) — version headers
 mirror the published bazel-registry entries.
 
+## 0.3.0 — Go client codegen
+
+- `openapi_go_client` (`//go:defs.bzl`): OpenAPI → typed Go HTTP client
+  (`Client` + `ClientWithResponses` + `components/schemas` types), backed by a
+  new default toolchain `//tools/openapi_to_go_client` that wraps
+  [`oapi-codegen`](https://github.com/oapi-codegen/oapi-codegen). Registered on
+  the reserved `go_client_codegen_toolchain_type`; swappable like the Rust one.
+- The Go plugin normalizes OpenAPI 3.1 constructs oapi-codegen doesn't handle
+  natively so real specs generate cleanly: nullable-type arrays
+  (`type: [X, "null"]`), null-only `oneOf` branches, and discriminated `oneOf`s
+  with inline branches (lifted to named schemas + a filled-in `mapping`, giving
+  proper discriminated unions). It also disambiguates Go field-name collisions
+  from dual camelCase/snake_case properties via `x-go-name`.
+- The plugin prunes oapi-codegen's broad import block itself with `go/ast`
+  instead of shelling out to `goimports`, so it runs in a hermetic sandbox with
+  no `go` on `PATH`.
+- Verified end-to-end against the WorkOS OpenAPI 3.1 spec (~57k lines of
+  generated client, compiles), plus the keeper smoke example + the shared plugin
+  contract test.
+
 ## 0.2.1 — threadable chrono / uuid / bytes
 
 - `openapi_rust_client` gains `chrono`, `uuid`, `bytes` attrs (default
