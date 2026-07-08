@@ -32,6 +32,10 @@ def _go_client_codegen_impl(ctx):
         "--rule-name={}".format(ctx.label.name),
         "--package={}".format(_shell_quote(ctx.attr.package)),
     ]
+    if ctx.attr.include_tags:
+        cmd_parts.append("--include-tags={}".format(_shell_quote(",".join(ctx.attr.include_tags))))
+    if ctx.attr.include_operations:
+        cmd_parts.append("--include-operations={}".format(_shell_quote(",".join(ctx.attr.include_operations))))
     cmd_parts.extend(["<", ctx.file.spec.path, ">", out.path])
 
     ctx.actions.run_shell(
@@ -56,6 +60,12 @@ _openapi_go_client_codegen = rule(
             mandatory = True,
             doc = "Go package name emitted in the generated file.",
         ),
+        "include_tags": attr.string_list(
+            doc = "If set, generate only operations carrying one of these OpenAPI tags.",
+        ),
+        "include_operations": attr.string_list(
+            doc = "If set, generate only operations with one of these operationIds.",
+        ),
     },
     toolchains = [_TOOLCHAIN],
 )
@@ -68,6 +78,8 @@ def openapi_go_client(
         spec,
         package = None,
         importpath = None,
+        include_tags = None,
+        include_operations = None,
         runtime = None,
         runtime_types = None,
         deps = None,
@@ -85,6 +97,11 @@ def openapi_go_client(
         sanitized form of `name`.
       importpath: go_library importpath. Defaults to `package`. Override
         when consumers import the client by a specific module path.
+      include_tags: if set, generate only operations carrying one of these
+        OpenAPI tags (plus the schemas they reach) — carve a small client out
+        of a large API.
+      include_operations: if set, generate only operations with one of these
+        operationIds.
       runtime: label of `github.com/oapi-codegen/runtime` (the runtime the
         generated client references for parameter binding). Defaults to
         `@com_github_oapi_codegen_runtime//:runtime`. Consumers using their
@@ -105,6 +122,8 @@ def openapi_go_client(
         name = gen_name,
         spec = spec,
         package = pkg,
+        include_tags = include_tags or [],
+        include_operations = include_operations or [],
     )
     rt_deps = [
         runtime or Label("@com_github_oapi_codegen_runtime//:runtime"),

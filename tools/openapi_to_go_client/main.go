@@ -100,6 +100,11 @@ func run() error {
 			Client: true,
 		},
 		OutputOptions: codegen.OutputOptions{
+			// Optional operation filters — when set, only the matching operations
+			// (and, after pruning, the schemas they reach) are generated. Lets a
+			// consumer carve a small client out of a large API.
+			IncludeTags:         args.includeTags,
+			IncludeOperationIDs: args.includeOps,
 			// oapi-codegen's default post-processing runs goimports
 			// (golang.org/x/tools/imports), which shells out to the `go` tool to
 			// resolve imports — unavailable in a hermetic build sandbox. Skip it
@@ -655,9 +660,11 @@ func sortedKeys(m map[string]string) []string {
 // ── argv parsing ─────────────────────────────────────────────────────────────
 
 type parsedArgs struct {
-	schemaName string
-	ruleName   string
-	pkg        string
+	schemaName  string
+	ruleName    string
+	pkg         string
+	includeTags []string
+	includeOps  []string
 }
 
 // parseArgs reads the standard --schema-name / --rule-name flags plus the
@@ -677,6 +684,10 @@ func parseArgs(argv []string) (parsedArgs, error) {
 			a.ruleName = val
 		case "--package":
 			a.pkg = val
+		case "--include-tags":
+			a.includeTags = splitList(val)
+		case "--include-operations":
+			a.includeOps = splitList(val)
 		default:
 			return a, fmt.Errorf("unknown flag %q", key)
 		}
@@ -688,6 +699,17 @@ func parseArgs(argv []string) (parsedArgs, error) {
 		a.pkg = "client"
 	}
 	return a, nil
+}
+
+// splitList parses a comma-separated flag value into a trimmed, non-empty list.
+func splitList(v string) []string {
+	var out []string
+	for _, p := range strings.Split(v, ",") {
+		if p = strings.TrimSpace(p); p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
 }
 
 // sanitizePackage lowercases and strips non-identifier characters so a Bazel

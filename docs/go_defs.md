@@ -26,8 +26,8 @@ default.
 <pre>
 load("@rules_openapi//go:defs.bzl", "openapi_go_client")
 
-openapi_go_client(<a href="#openapi_go_client-name">name</a>, <a href="#openapi_go_client-spec">spec</a>, <a href="#openapi_go_client-package">package</a>, <a href="#openapi_go_client-importpath">importpath</a>, <a href="#openapi_go_client-runtime">runtime</a>, <a href="#openapi_go_client-runtime_types">runtime_types</a>, <a href="#openapi_go_client-deps">deps</a>, <a href="#openapi_go_client-visibility">visibility</a>,
-                  <a href="#openapi_go_client-go_library_kwargs">**go_library_kwargs</a>)
+openapi_go_client(<a href="#openapi_go_client-name">name</a>, <a href="#openapi_go_client-spec">spec</a>, <a href="#openapi_go_client-package">package</a>, <a href="#openapi_go_client-importpath">importpath</a>, <a href="#openapi_go_client-include_tags">include_tags</a>, <a href="#openapi_go_client-include_operations">include_operations</a>, <a href="#openapi_go_client-runtime">runtime</a>,
+                  <a href="#openapi_go_client-runtime_types">runtime_types</a>, <a href="#openapi_go_client-deps">deps</a>, <a href="#openapi_go_client-visibility">visibility</a>, <a href="#openapi_go_client-go_library_kwargs">**go_library_kwargs</a>)
 </pre>
 
 Generate a go_library of a typed OpenAPI HTTP client.
@@ -45,6 +45,8 @@ method per OpenAPI operation, plus Go types for `components/schemas`.
 | <a id="openapi_go_client-spec"></a>spec |  label of an OpenAPI `.yaml` / `.yml` / `.json` document.   |  none |
 | <a id="openapi_go_client-package"></a>package |  Go package name for the generated file. Defaults to a sanitized form of `name`.   |  `None` |
 | <a id="openapi_go_client-importpath"></a>importpath |  go_library importpath. Defaults to `package`. Override when consumers import the client by a specific module path.   |  `None` |
+| <a id="openapi_go_client-include_tags"></a>include_tags |  if set, generate only operations carrying one of these OpenAPI tags (plus the schemas they reach) — carve a small client out of a large API.   |  `None` |
+| <a id="openapi_go_client-include_operations"></a>include_operations |  if set, generate only operations with one of these operationIds.   |  `None` |
 | <a id="openapi_go_client-runtime"></a>runtime |  label of `github.com/oapi-codegen/runtime` (the runtime the generated client references for parameter binding). Defaults to `@com_github_oapi_codegen_runtime//:runtime`. Consumers using their own go_deps universe should thread this through so the generated code compiles against the same runtime they build with.   |  `None` |
 | <a id="openapi_go_client-runtime_types"></a>runtime_types |  label of `github.com/oapi-codegen/runtime/types` (the Date/UUID/File format types the generated code references when the spec uses those formats). Defaults to `@com_github_oapi_codegen_runtime//types`. Thread from the same universe as `runtime`.   |  `None` |
 | <a id="openapi_go_client-deps"></a>deps |  extra deps forwarded to go_library (for specs whose generated code references additional packages).   |  `None` |
