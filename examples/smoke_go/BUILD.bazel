@@ -1,0 +1,21 @@
+# gazelle:ignore
+load("@rules_go//go:def.bzl", "go_test")
+load("@rules_openapi//go:defs.bzl", "openapi_go_client")
+
+# Generate a Go client from a small real OpenAPI 3 spec (Oxide's "keeper"
+# service from progenitor's test suite — the same fixture the Rust smoke example
+# uses). See //openapi/private:extensions.bzl for why we use this over a petstore.
+openapi_go_client(
+    name = "keeper_client",
+    package = "keeper",
+    spec = "@openapi_keeper_example//file:keeper.json",
+)
+
+# Compile-and-import test: construct the generated Client + reference its public
+# surface. No real HTTP (that needs a server), but the whole codegen → go_library
+# pipeline fails at build time if anything broke.
+go_test(
+    name = "keeper_client_test",
+    srcs = ["client_test.go"],
+    embed = [":keeper_client"],
+)

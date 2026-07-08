@@ -1,0 +1,26 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+load("@rules_openapi//openapi:contract_test.bzl", "openapi_plugin_contract_test")
+
+go_library(
+    name = "openapi_to_go_client_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/tomato-bazel/rules_openapi/tools/openapi_to_go_client",
+    visibility = ["//visibility:private"],
+    deps = [
+        "@com_github_getkin_kin_openapi//openapi3",
+        "@com_github_oapi_codegen_oapi_codegen_v2//pkg/codegen",
+        "@in_gopkg_yaml_v3//:yaml_v3",
+        "@org_golang_x_tools//go/ast/astutil",
+    ],
+)
+
+go_binary(
+    name = "openapi_to_go_client",
+    embed = [":openapi_to_go_client_lib"],
+    visibility = ["//visibility:public"],
+)
+
+openapi_plugin_contract_test(
+    name = "openapi_to_go_client_conforms",
+    plugin = ":openapi_to_go_client",
+)

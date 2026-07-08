@@ -23,6 +23,13 @@ stardoc(
 )
 
 stardoc(
+    name = "go_defs_doc",
+    out = "go_defs.md.generated",
+    input = "//go:defs.bzl",
+    deps = ["//go:defs_bzl"],
+)
+
+stardoc(
     name = "providers_doc",
     out = "providers.md.generated",
     input = "//openapi:providers.bzl",
@@ -50,6 +57,12 @@ diff_test(
 )
 
 diff_test(
+    name = "go_defs_doc_up_to_date",
+    file1 = "go_defs.md",
+    file2 = ":go_defs_doc",
+)
+
+diff_test(
     name = "providers_doc_up_to_date",
     file1 = "providers.md",
     file2 = ":providers_doc",
@@ -72,6 +85,7 @@ write_source_files(
     name = "update",
     files = {
         "defs.md": ":rust_defs_doc",
+        "go_defs.md": ":go_defs_doc",
         "providers.md": ":providers_doc",
         "toolchains.md": ":toolchains_doc",
         "contract_test.md": ":contract_test_doc",
