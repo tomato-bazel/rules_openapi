@@ -282,14 +282,26 @@ func transformUnion(m *yaml.Node, used map[string]bool, lifted *[]nameNode) {
 	if m.Kind != yaml.MappingNode {
 		return
 	}
-	disc := mapGet(m, "discriminator")
 	oneOf := mapGet(m, "oneOf")
-	if disc == nil || oneOf == nil || oneOf.Kind != yaml.SequenceNode {
+	if oneOf == nil || oneOf.Kind != yaml.SequenceNode || len(oneOf.Content) < 2 {
 		return
 	}
-	propName := scalarField(disc, "propertyName")
+	disc := mapGet(m, "discriminator")
+	propName := ""
+	if disc != nil {
+		propName = scalarField(disc, "propertyName")
+	}
 	if propName == "" {
-		return
+		// No explicit discriminator. Try to INFER one: a property that every
+		// branch tags with a distinct scalar const/enum (possibly nested in an
+		// allOf) is a de-facto discriminator. Real specs express polymorphic
+		// bodies this way (e.g. WorkOS's oauth-vs-m2m application by
+		// `application_type`), and oapi-codegen otherwise emits an unusable
+		// accessor-less union.
+		propName = inferDiscriminatorProp(oneOf)
+		if propName == "" {
+			return
+		}
 	}
 	// Already fully $ref-based? Leave it — oapi-codegen handles that shape.
 	anyInline := false
@@ -302,6 +314,12 @@ func transformUnion(m *yaml.Node, used map[string]bool, lifted *[]nameNode) {
 		return
 	}
 
+	// Synthesize the discriminator node when we inferred one.
+	if disc == nil {
+		disc = &yaml.Node{Kind: yaml.MappingNode}
+		setKey(disc, "propertyName", scalar(propName))
+		setKey(m, "discriminator", disc)
+	}
 	mapping := mapGet(disc, "mapping")
 	pairs := map[string]string{}
 	newBranches := make([]*yaml.Node, len(oneOf.Content))
@@ -537,9 +555,24 @@ func isNullTypeSchema(br *yaml.Node) bool {
 }
 
 // discriminatorValue extracts the const / single-enum value of the discriminator
-// property from an inline object branch (properties.<prop>.const | .enum[0]).
+// property from a branch — its own `properties`, or those of any `allOf` member
+// (polymorphic bodies commonly tag the discriminator inside an allOf).
 func discriminatorValue(branch *yaml.Node, prop string) string {
-	props := mapGet(branch, "properties")
+	if v := constOfProp(branch, prop); v != "" {
+		return v
+	}
+	if allOf := mapGet(branch, "allOf"); allOf != nil && allOf.Kind == yaml.SequenceNode {
+		for _, mem := range allOf.Content {
+			if v := constOfProp(mem, prop); v != "" {
+				return v
+			}
+		}
+	}
+	return ""
+}
+
+func constOfProp(node *yaml.Node, prop string) string {
+	props := mapGet(node, "properties")
 	if props == nil {
 		return ""
 	}
@@ -547,13 +580,70 @@ func discriminatorValue(branch *yaml.Node, prop string) string {
 	if p == nil {
 		return ""
 	}
-	if c := mapGet(p, "const"); c != nil && c.Kind == yaml.ScalarNode {
+	// A discriminator value must be a string — bool/number consts (e.g.
+	// is_first_party: true) are not valid discriminators and yield garbage
+	// schema names ("True"). Restrict to string-typed const/enum scalars.
+	if c := mapGet(p, "const"); isStringScalar(c) {
 		return c.Value
 	}
-	if e := mapGet(p, "enum"); e != nil && e.Kind == yaml.SequenceNode && len(e.Content) == 1 {
+	if e := mapGet(p, "enum"); e != nil && e.Kind == yaml.SequenceNode && len(e.Content) == 1 && isStringScalar(e.Content[0]) {
 		return e.Content[0].Value
 	}
 	return ""
+}
+
+func isStringScalar(n *yaml.Node) bool {
+	return n != nil && n.Kind == yaml.ScalarNode && (n.Tag == "!!str" || n.Tag == "")
+}
+
+// inferDiscriminatorProp returns a property name that acts as a de-facto
+// discriminator across the oneOf branches: every branch must tag it with a
+// distinct, non-empty scalar const. Returns "" if no such property exists (the
+// oneOf is left as an untagged union).
+func inferDiscriminatorProp(oneOf *yaml.Node) string {
+	for _, prop := range candidateConstProps(oneOf.Content[0]) {
+		seen := map[string]bool{}
+		ok := true
+		for _, br := range oneOf.Content {
+			v := discriminatorValue(br, prop)
+			if v == "" || seen[v] {
+				ok = false
+				break
+			}
+			seen[v] = true
+		}
+		if ok {
+			return prop
+		}
+	}
+	return ""
+}
+
+// candidateConstProps lists (in document order) the property names a branch tags
+// with a const/enum — directly or via an allOf member.
+func candidateConstProps(branch *yaml.Node) []string {
+	seen := map[string]bool{}
+	var out []string
+	collect := func(node *yaml.Node) {
+		props := mapGet(node, "properties")
+		if props == nil {
+			return
+		}
+		for i := 0; i+1 < len(props.Content); i += 2 {
+			key := props.Content[i].Value
+			if !seen[key] && constOfProp(node, key) != "" {
+				seen[key] = true
+				out = append(out, key)
+			}
+		}
+	}
+	collect(branch)
+	if allOf := mapGet(branch, "allOf"); allOf != nil && allOf.Kind == yaml.SequenceNode {
+		for _, mem := range allOf.Content {
+			collect(mem)
+		}
+	}
+	return out
 }
 
 var nonIdent = regexp.MustCompile(`[^a-zA-Z0-9]+`)
