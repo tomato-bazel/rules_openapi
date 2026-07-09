@@ -1,0 +1,11 @@
+# Root-only toolchain registration for the Rust codegen path.
+#
+# These are here, NOT in MODULE.bazel's register_toolchains(), on purpose:
+# register_toolchains() in MODULE.bazel propagates to every downstream consumer,
+# which would force rules_rust + a Rust toolchain into Go-only consumers of
+# openapi_go_client. .bazelrc is not propagated, so registering here keeps the
+# Rust path fully functional for this repo's own tests + examples while leaving
+# Go-only consumers' module graphs Rust-free. Consumers of the Rust rules
+# register these themselves (see docs/rust_defs.md).
+common --extra_toolchains=@rust_toolchains//:all
+common --extra_toolchains=//rust:default_rust_client_codegen_toolchain

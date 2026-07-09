@@ -4,6 +4,21 @@ All notable changes to rules_openapi. The format is loosely
 [Keep a Changelog](https://keepachangelog.com/) — version headers
 mirror the published bazel-registry entries.
 
+## 0.4.0 — Rust path is opt-in (Go consumers no longer pull rules_rust)
+
+- **Breaking (Rust consumers only):** `rules_rust`, `rules_jsonschema`,
+  `crate_universe`, and the Rust toolchain are now `dev_dependency` wiring, and
+  the Rust codegen toolchain is registered in this repo's `.bazelrc` rather than
+  in `MODULE.bazel`. `register_toolchains()` in `MODULE.bazel` propagates to every
+  downstream module, so a Go-only consumer of `openapi_go_client` was forced to
+  pull `rules_rust` and register Rust toolchains it never used. After 0.4.0, a Go
+  consumer's module graph is Rust-free.
+- Consumers of `openapi_rust_client` now add `rules_rust` + `rules_jsonschema`,
+  the `crate_universe` deps, and `register_toolchains("@rust_toolchains//:all",
+  "@rules_openapi//rust:default_rust_client_codegen_toolchain")` in their own
+  `MODULE.bazel` — see the README "Install" section. No change to the rule APIs
+  or generated output.
+
 ## 0.3.0 — Go client codegen
 
 - `openapi_go_client` (`//go:defs.bzl`): OpenAPI → typed Go HTTP client

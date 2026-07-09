@@ -9,10 +9,13 @@
      `progenitor-client`, `reqwest`, `serde`, `serde_json`, and any
      additional crates the consumer threads through.
 
-The default toolchain (registered by MODULE.bazel) points at the
-in-repo `openapi_to_rust_client` binary, which wraps `progenitor`
-under the hood. Swap by declaring your own `openapi_codegen_toolchain`
-and registering it ahead of the default.
+The default toolchain points at the in-repo `openapi_to_rust_client`
+binary, which wraps `progenitor` under the hood. Unlike the Go path,
+the Rust backend is dev-gated (so Go-only consumers don't pull
+`rules_rust`): a consumer registers it — plus `rules_rust` + the
+crate deps — themselves (see the README "Install" section). Swap by
+declaring your own `openapi_codegen_toolchain` and registering it
+ahead of the default.
 """
 
 load("@rules_rust//rust:defs.bzl", "rust_library")
