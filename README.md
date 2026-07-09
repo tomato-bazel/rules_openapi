@@ -53,6 +53,7 @@ and the per-plugin flags. See
 `.bazelrc`:
 
 ```
+common --registry=https://registry.tbzl.dev/
 common --registry=https://raw.githubusercontent.com/fastverk/bazel-registry/main/
 common --registry=https://bcr.bazel.build/
 ```
@@ -60,12 +61,28 @@ common --registry=https://bcr.bazel.build/
 `MODULE.bazel`:
 
 ```python
-bazel_dep(name = "rules_openapi", version = "0.1.0")
+bazel_dep(name = "rules_openapi", version = "0.4.0")
 ```
 
-`rules_jsonschema`, `rules_rust`, a Rust toolchain (1.88+), and
-`crates_universe` are pulled in transitively. The default Rust client
-toolchain is registered automatically.
+That's all a **Go** consumer needs — `openapi_go_client`'s toolchain
+(`oapi-codegen` + `rules_go`) is registered automatically.
+
+**Rust** consumers (`openapi_rust_client`) additionally bring the Rust
+codegen backend, which is *not* pulled in transitively as of 0.4.0 (so
+Go-only consumers don't inherit `rules_rust`):
+
+```python
+bazel_dep(name = "rules_rust", version = "0.70.0")
+bazel_dep(name = "rules_jsonschema", version = "0.1.0")
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(edition = "2021", versions = ["1.95.0"])
+use_repo(rust, "rust_toolchains")
+register_toolchains(
+    "@rust_toolchains//:all",
+    "@rules_openapi//rust:default_rust_client_codegen_toolchain",
+)
+```
 
 ## `openapi_rust_client`
 
