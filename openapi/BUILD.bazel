@@ -13,9 +13,14 @@ exports_files([
 # or their own implementations to override.
 toolchain_type(name = "rust_client_codegen_toolchain_type")
 
-toolchain_type(name = "go_client_codegen_toolchain_type")
+# OpenAPI → aion graph module-objects (the api_manifest reify path). The plugin
+# binary ships from aion (`@aion/artifact-ingestion-adapters:openapi_to_aion_manifest`);
+# consumers register it as the default for this type (fastverk ships no default —
+# the aion object model is not a fastverk concern).
+toolchain_type(name = "aion_manifest_codegen_toolchain_type")
 
 # Reserved but not yet wired:
+#   toolchain_type(name = "go_client_codegen_toolchain_type")
 #   toolchain_type(name = "rust_server_codegen_toolchain_type")
 #   toolchain_type(name = "go_server_codegen_toolchain_type")
 
